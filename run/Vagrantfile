@@ -1,0 +1,56 @@
+
+# vagrant halt sparkIDE-template
+# vagrant package --base sparkIDE-template --output sparkIDE-template.box
+# vagrant box add sparkIDE-template file:///F:/COURSES/_SPARK.DEVELOPMENT.ENVIRONMENT/VAGRANT_COURSE/VAGRANT_PROJECT/sparkIDE-template.box
+
+varRamNode=3192
+varWorkspace = "/Users/scigility/vagrant-spark-dev"
+
+varDomain = "poc-d.internal"
+
+spark_nodes = [
+	{ :host => "sparkIDE",  :ip => "10.10.20.20", :box => "sparkIDE-template", :ram => varRamNode, :cpu => 4, :gui => true },
+]
+
+Vagrant.configure("2") do |config|
+
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
+  spark_nodes.each do |spark_node|
+	config.vm.define spark_node[:host] do |spark_config|
+
+		spark_config.ssh.username = "vagrant"
+		spark_config.ssh.password = "vagrant"
+	
+		spark_config.vm.box = spark_node[:box]
+		spark_config.vm.hostname = "#{spark_node[:host]}.#{varDomain}"
+		spark_config.vm.network "private_network", ip: spark_node[:ip], :netmask => "255.255.255.0"
+		
+		spark_config.hostmanager.aliases = "#{spark_node[:host]}"
+		
+		spark_config.vm.provider :virtualbox do |v|
+			v.name = spark_node[:host].to_s
+			v.gui = spark_node[:gui]
+			
+			v.customize ["modifyvm", :id, "--memory", spark_node[:ram].to_s]
+			v.customize ["modifyvm", :id, "--cpus", spark_node[:cpu].to_s]
+		end
+
+		spark_config.vm.synced_folder varWorkspace, "/workspace", 
+			id: "workspace",
+			owner: "vagrant",
+			group: "vagrant"
+
+		spark_config.vm.provision :shell, 
+			:path => "os-tuning/provision_for_gui_network.sh", 
+			:args => "#{spark_node[:host]}.#{varDomain}"
+		
+		spark_config.vm.provision :shell, :path => "os-tuning/provision_for_print_os.sh"
+		
+	end
+  end	
+end

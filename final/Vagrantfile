@@ -1,0 +1,76 @@
+# vagrant box add centos67-desktop file:///F:/COURSES/_SPARK.DEVELOPMENT.ENVIRONMENT/boxes/centos67-desktop-nocm-2.0.13.box
+ 
+# vagrant halt sparkIDE-template
+# vagrant package --base sparkIDE-template --output sparkIDE-template.box
+# vagrant box add sparkIDE-template file:///F:/COURSES/_SPARK.DEVELOPMENT.ENVIRONMENT/VAGRANT_COURSE/VAGRANT_PROJECT/sparkIDE-template.box
+# vagrant destroy sparkIDE-template -f
+
+spark_nodes = [
+	{ :host => "sparkIDE-template", :ip => "10.10.45.20", :box => "boxcutter/centos67-desktop", :ram => 3072, :cpu => 4, :gui => true },
+#	{ :host => "sparkIDE-template", :ip => "10.10.45.20", :box => "centos67-desktop", :ram => 3072, :cpu => 4, :gui => true },
+]
+
+varDomain = "poc-d.internal"
+varresources = "F:/COURSES/_SPARK.DEVELOPMENT.ENVIRONMENT/VAGRANT_COURSE/resources/"
+
+Vagrant.configure("2") do |config|
+
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.manage_guest = true
+    config.hostmanager.ignore_private_ip = false
+    config.hostmanager.include_offline = true
+ 
+	spark_nodes.each do |spark_node|
+
+		config.vm.define spark_node[:host] do |spark_config|
+
+			spark_config.vm.box = spark_node[:box]
+			spark_config.vm.box_version = "2.0.14"
+
+			spark_config.vm.network "private_network", ip: spark_node[:ip], :netmask => "255.255.255.0"
+			spark_config.vm.hostname = "#{spark_node[:host]}.#{varDomain}"
+			# spark_config.vm.hostname = spark_node[:host] + "." + varDomain
+
+		    spark_config.hostmanager.aliases = "#{spark_node[:host]}"
+
+			spark_config.vm.provider :virtualbox do |v|
+				v.name = spark_node[:host].to_s
+				v.gui = spark_node[:gui]
+
+				v.customize ["modifyvm", :id, "--memory", spark_node[:ram].to_s ]
+				v.customize ["modifyvm", :id, "--cpus", spark_node[:cpu].to_s ]
+			end
+
+			spark_config.vm.synced_folder varresources, "/resources", 
+				id: "resources",
+				owner: "vagrant",
+				group: "vagrant"
+
+			spark_config.vm.provision :shell, 
+				:path => "os-tuning/provision_for_gui_network.sh", 
+				:args => "#{spark_node[:host]}.#{varDomain}"
+			
+			spark_config.vm.provision :shell, :path => "os-tuning/provision_for_print_os.sh"
+			spark_config.vm.provision :shell, :path => "os-tuning/provision_for_os_settings.sh"
+			spark_config.vm.provision :shell, :path => "os-tuning/provision_for_os.sh"
+			spark_config.vm.provision :shell, :path => "os-tuning/provision_for_print_os.sh"
+			
+		    spark_config.vm.provision :shell, :path => "java/provision_for_java.sh"
+		    spark_config.vm.provision :shell, :path => "maven/provision_for_local_maven.sh"
+			
+		    spark_config.vm.provision :shell, :path => "scala/provision_for_scala.sh"
+		    spark_config.vm.provision :shell, :path => "scala-ide/provision_for_scalaIDE.sh"
+			
+			spark_config.vm.provision :shell, :path => "sbt/provision_for_sbt.sh"
+			spark_config.vm.provision :shell, :path => "sbt/provision_for_sbteclipse.sh"
+			
+			# spark-shell
+		    spark_config.vm.provision :shell, :path => "spark/provision_for_spark_162.sh"
+		    # spark_config.vm.provision :shell, :path => "spark/provision_for_spark_201.sh"
+			
+			spark_config.vm.provision :shell, :path => "sbt-demo/provision_for_setup_demo_scala_app.sh"
+			
+		end
+	end		
+end

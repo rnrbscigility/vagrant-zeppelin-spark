@@ -1,0 +1,49 @@
+ 
+spark_nodes = [
+	{ :host => "cm571-template", :ip => "10.10.45.9", :box => "boxcutter/centos67", :ram => 1024, :cpu => 1, :gui => false },
+	{ :host => "cm571-template2", :ip => "10.10.45.10", :box => "boxcutter/centos67", :ram => 2048, :cpu => 2, :gui => false },
+]
+
+
+varDomain = "poc-d.internal"
+varresources = "F:/COURSES/VAGRANT_COURSE/resources/"
+
+Vagrant.configure("2") do |config|
+
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = true
+    config.hostmanager.manage_guest = true
+    config.hostmanager.ignore_private_ip = false
+    config.hostmanager.include_offline = true
+ 
+	spark_nodes.each do |spark_node|
+
+		config.vm.define spark_node[:host] do |spark_config|
+
+			spark_config.vm.box = spark_node[:box]
+			spark_config.vm.box_version = "2.0.14"
+
+			spark_config.vm.network "private_network", ip: spark_node[:ip], :netmask => "255.255.255.0"
+			spark_config.vm.hostname = "#{spark_node[:host]}.#{varDomain}"
+			# spark_config.vm.hostname = spark_node[:host] + "." + varDomain
+
+		    spark_config.hostmanager.aliases = "#{spark_node[:host]}"
+
+			spark_config.vm.provider :virtualbox do |v|
+				v.name = spark_node[:host].to_s
+				v.gui = spark_node[:gui]
+
+				v.customize ["modifyvm", :id, "--memory", spark_node[:ram].to_s ]
+				v.customize ["modifyvm", :id, "--cpus", spark_node[:cpu].to_s ]
+			end
+
+			spark_config.vm.synced_folder varresources, "/resources", 
+				id: "resources",
+				owner: "vagrant",
+				group: "vagrant"
+
+		    spark_config.vm.provision :shell, :path => "java/provision_for_java.sh"
+
+		end
+	end		
+end

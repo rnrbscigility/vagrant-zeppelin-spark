@@ -1,0 +1,7 @@
+# http://www.scala-sbt.org/download.html
+
+# https://dl.bintray.com/sbt/native-packages/sbt/
+
+# https://dl.bintray.com/sbt/native-packages/sbt/0.13.11/sbt-0.13.11.tgz
+
+# https://dl.bintray.com/sbt/native-packages/sbt/0.13.12/sbt-0.13.12.tgz

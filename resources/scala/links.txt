@@ -1,0 +1,8 @@
+http://www.scala-lang.org/download/
+
+http://www.scala-lang.org/download/all.html
+http://www.scala-lang.org/download/2.11.8.html
+http://downloads.lightbend.com/scala/2.11.8/scala-2.11.8.rpm
+
+
+

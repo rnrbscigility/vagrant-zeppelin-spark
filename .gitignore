@@ -1,0 +1,6 @@
+.vagrant
+*.gz
+*.tgz
+.DS_Store
+*.parcel
+*.rpm
